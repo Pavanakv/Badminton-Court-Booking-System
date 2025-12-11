@@ -89,7 +89,7 @@ export default function BookingPage() {
       <div className="flex flex-col lg:flex-row-reverse justify-center items-stretch gap-12 mt-12 px-6">
         <div className="w-full lg:w-[45%] rounded-3xl overflow-hidden shadow-xl flex">
           <img
-            src="/assets/court.jpg"
+            src="/assets/Court.jpg"
             alt="Badminton Court"
             className="w-full h-full object-cover rounded-3xl"
           />
