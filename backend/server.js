@@ -5,11 +5,17 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "*",
-  })
-);
+app.use(cors({
+  origin: [
+    process.env.FRONTEND_URL,
+    "https://badminton-court-booking-system-py3q2mg9qe-pavana-k-vs-projects.vercel.app",
+    "https://badminton-court-booking-system.vercel.app",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
 
 app.get("/", (req, res) => res.send("Backend is running..."));
 
