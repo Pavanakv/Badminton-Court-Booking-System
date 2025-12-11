@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -5,84 +6,56 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-const cors = require("cors");
 
-const allowedOrigins = [
-  "https://badminton-court-booking-system.vercel.app",
-  /\.vercel\.app$/, 
-  process.env.FRONTEND_URL,
-];
+// --- DEBUG CORS: allow all origins while we debug ---
+app.use((req, res, next) => {
+  // Log the origin for debugging
+  console.log("Incoming Origin:", req.headers.origin || "[no origin]");
+  next();
+});
 
+// WARNING: permissive CORS for debugging only
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      if (
-        allowedOrigins.includes(origin) ||
-        /\.vercel\.app$/.test(origin)
-      ) {
-        callback(null, true);
-      } else {
-        console.log("❌ CORS blocked:", origin);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: true, // accept any origin (debugging). Replace later with a whitelist.
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-
-
-
-
+// Basic root test
 app.get("/", (req, res) => res.send("Backend is running..."));
 
-
-function sanitizeMongoUri(uri) {
-  if (!uri) return uri;
-  try {
-    const url = new URL(uri);
-    const removeKeys = ["usenewurlparser", "useunifiedtopology"];
-    removeKeys.forEach((k) => {
-      if (url.searchParams.has(k)) url.searchParams.delete(k);
-    });
-    return url.toString();
-  } catch (err) {
-    return uri;
+// MongoDB connect (safe)
+async function connectToMongo() {
+  if (global.__dbConnected) {
+    return;
   }
-}
-
-async function startServer() {
-  const rawUri = process.env.MONGO_URL;
-  const mongoUri = sanitizeMongoUri(rawUri);
-
-  if (!mongoUri) {
-    console.warn("MONGO_URL is not set. Set backend/.env or Render env vars.");
-  } else if (mongoUri !== rawUri) {
-    console.log("Sanitized MONGO_URL to remove unsupported options.");
+  if (!process.env.MONGO_URL) {
+    console.warn("MONGO_URL not set!");
+    return;
   }
-
   try {
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(process.env.MONGO_URL);
+    global.__dbConnected = true;
     console.log("MongoDB Connected");
   } catch (err) {
     console.error("DB Error:", err);
   }
-
-  app.use("/courts", require("./routes/courtRoutes"));
-  app.use("/equipment", require("./routes/equipmentRoutes"));
-  app.use("/coaches", require("./routes/coachRoutes"));
-  app.use("/bookings", require("./routes/bookingRoutes"));
-  app.use("/pricing", require("./routes/priceRoutes"));
-  app.use("/history", require("./routes/historyRoutes"));
-
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on PORT ${PORT}`);
-  });
 }
+connectToMongo();
 
-startServer();
+// register your routes (unchanged)
+app.use("/courts", require("./routes/courtRoutes"));
+app.use("/equipment", require("./routes/equipmentRoutes"));
+app.use("/coaches", require("./routes/coachRoutes"));
+app.use("/bookings", require("./routes/bookingRoutes"));
+app.use("/pricing", require("./routes/priceRoutes"));
+app.use("/history", require("./routes/historyRoutes"));
+
+// Start server using env PORT (render)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on PORT ${PORT}`);
+});
