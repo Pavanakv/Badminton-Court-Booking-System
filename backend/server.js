@@ -5,18 +5,28 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
+const allowedOrigins = [
+  "https://badminton-court-booking-system-gg0jph1bc-pavana-k-vs-projects.vercel.app",
+  "https://badminton-court-booking-system.vercel.app",
+  process.env.FRONTEND_URL,
+];
+
 app.use(
   cors({
-    origin: [
-      "https://badminton-court-booking-system-gg0jph1bc-pavana-k-vs-projects.vercel.app",
-      "https://badminton-court-booking-system.vercel.app",
-      process.env.FRONTEND_URL,
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ CORS Blocked Origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
 
 
 
